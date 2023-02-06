@@ -31,8 +31,10 @@ We have a ROS cheat sheet for you! Check it out [here](Docs/ROScheatsheet.pdf).
 Please check out our [FAQ](FAQ/readme.md) page for common questions.
 
 # Lab Assignments
-## [Lab 0: Introduction to ROS](ROS_Core/src/Labs/Lab0/README.md)
-## [Lab 1: iLQR Trajectory Planning](ROS_Core/src/Labs/Lab1/README.md)
-## [Lab 2: Collision Avodiance and Navigation in Dynamic Environment](ROS_Core/src/Labs/Lab2/README.md)
-## [Lab 3: MDP and POMDP](ROS_Core/src/Labs/Lab3/README.md)
-## [Lab 4: Imitation Learning](ROS_Core/src/Labs/Lab4/README.md)
+## [Pre-Lab 0: Introduction to ROS](Docs/Intro_ROS.pdf)
+## [Pre-Lab 0: Introduction to Mini-Truck](Docs/Intro_Mini_Truck.pdf)
+## [Lab 0: Introduction to ROS](ROS_Core/src/Labs/Lab0)
+## [Lab 1: iLQR Trajectory Planning](ROS_Core/src/Labs/Lab1)
+## [Lab 2: Collision Avodiance and Navigation in Dynamic Environment](ROS_Core/src/Labs/Lab2)
+## [Lab 3: MDP and POMDP](ROS_Core/src/Labs/Lab3)
+## [Lab 4: Imitation Learning](ROS_Core/src/Labs/Lab4)
