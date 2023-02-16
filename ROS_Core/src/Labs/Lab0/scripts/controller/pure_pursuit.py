@@ -205,7 +205,7 @@ class PurePursuitController():
 
             
             if self.state_buffer.new_data_available:
-                rospy.logerr("made it")
+                #rospy.logerr("made it")
                 # read the current state and goal from the buffer
                 state_cur = self.state_buffer.readFromRT()
                 goal_cur = self.goal_buffer.readFromRT()
@@ -214,7 +214,7 @@ class PurePursuitController():
                 vel_cur = state_cur.v_long 
 
                 # check if a goal is available
-                rospy.logerr("goalcur{}".format(goal_cur))
+                # rospy.logerr("goalcur{}".format(goal_cur))
                 if goal_cur is not None:
                     # First, transform the goal to the robot frame
                     goal_robot = np.linalg.inv(state_cur.transformation_matrix()).dot(goal_cur)
@@ -261,13 +261,13 @@ class PurePursuitController():
 
                     else:
                         # Define the look ahead distance 
-                        rospy.logerr("made to steering")
+                        # rospy.loginfo("made to steering")
                         l_d = min(self.ld_max, dis2goal)
 
                         # Apply pure pursuit controller for steering
                        
                         steer = np.arctan(2*self.wheel_base*np.sin(alpha)/l_d)
-                        rospy.logerr("steer{}".format(steer))
+                        # rospy.loginfo("steer{}".format(steer))
                         # Set the referecnce velocity 
                         reference_velocity = min(self.max_vel, dis2goal-self.stop_distance)
                         
@@ -276,7 +276,7 @@ class PurePursuitController():
 
                     # Apply proportial controller
                     accel = self.throttle_gain * (reference_velocity - vel_cur)
-                    rospy.logerr("accc{}".format(accel))
+                    # rospy.loginfo("accc{}".format(accel))
                     ########################### END OF TODO 5 ###########################################
                     
                     # publish the control
