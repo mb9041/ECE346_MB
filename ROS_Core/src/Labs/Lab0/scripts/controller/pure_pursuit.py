@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+# Import necessary packages 
 import threading
 import rospy
 import numpy as np
@@ -9,10 +10,12 @@ from racecar_msgs.msg import ServoMsg
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import PoseStamped
 
+# Setup Pursuit Controller as a class
 class PurePursuitController():
     '''
     Main class for the controller
     '''
+
     def __init__(self):
         '''
         Constructor for the PurePursuitController class
@@ -45,7 +48,7 @@ class PurePursuitController():
         
         # Read ROS topic name to publish control command
         self.control_topic = get_ros_param('~control_topic', '/Control')
-        
+
         # Proportional gain for the throttle
         self.throttle_gain = get_ros_param('~throttle_gain', 0.05)
         
@@ -56,7 +59,7 @@ class PurePursuitController():
         self.max_steer = get_ros_param('~max_steer', 0.35)
         self.max_vel = get_ros_param('~max_vel', 0.5)
         
-        # Distance threshold to stop
+        # Distance threshold to stop 
         self.stop_distance = get_ros_param('~stop_distance', 0.5)
         
         # Read the wheel base of the robot
@@ -71,14 +74,15 @@ class PurePursuitController():
         '''
         This function sets up the publisher for the control command
         '''
-        ################## TODO: 1. Set up a publisher for the ServoMsg message###################
+        ################## TODO: 1. Set up a publisher for the ServoMsg message############
         # Create a publisher - self.control_pub:
         #   - subscribes to the topic <self.control_topic>
         #   - has message type <ServoMsg> (racecar_msgs.msg.Odometry) 
         #   - with queue size 1
-        self.control_pub = rospy.Publisher("self.control_topic", ServoMsg, queue_size = 1)
-        ########################### END OF TODO 1#################################
-        
+
+        self.control_pub = rospy.Publisher(self.control_topic, ServoMsg, queue_size = 1)
+
+        ########################### END OF TODO 1###########################################
             
     def setup_subscriber(self):
         '''
@@ -93,8 +97,10 @@ class PurePursuitController():
         #   - has message type <Odometry> (nav_msgs.msg.Odometry) 
         #   - with callback function <self.odometry_callback>, which has already been implemented
         #   - with queue size 1
-        self.odom_sub = rospy.Subscriber('self.odom_topic', Odometry,self.odometry_callback, queue_size=1)
-        ########################### END OF TODO 2#################################
+
+        self.odom_sub = rospy.Subscriber(self.odom_topic, Odometry,self.odometry_callback, queue_size=1)
+
+        ########################### END OF TODO 2##################################################
         
     def odometry_callback(self, odom_msg: Odometry):
         """
@@ -124,17 +130,24 @@ class PurePursuitController():
         #          type you can use the command: 
         #          rosmsg show geometry_msgs/PoseStamped
         # 2. Retrieve the goal from the goal message 
-        #   and create a 3-dim numpy array [x,y,1]
+        #    and create a 3-dim numpy array [x,y,1]
         # 3. add the goal to the buffer (self.goal_buffer)
-        #   Hint: Look at the buffer for the odometry callback 
+        #    Hint: Look at the buffer for the odometry callback 
         
-        goal_x = goal_msg.pode.position.x
-        goal_y = goal_msg.pode.position.y
+        # Define the x Position of the goal_msg
+        goal_x = goal_msg.pose.position.x
+
+        # Define the y position of the goal_msg
+        goal_y = goal_msg.pose.position.y
+
+        # Define the goal position in a 3-dim array 
         goal = np.array([goal_x, goal_y, 1])
 
+        # Add Goal to the buffer (Planning thread will read from the buffer)
         self.goal_buffer.writeFromNonRT(goal)
         
-        ########################### END OF TODO 3 #################################
+        ########################### END OF TODO 3 ########################################
+
         # Log the goal to the console using "rospy.loginfo"
         rospy.loginfo(f"Received a new goal [{np.round(goal_x, 3)}, {np.round(goal_y,3)}]")
         
@@ -163,6 +176,21 @@ class PurePursuitController():
         # 3. Set the throttle and steering angle to the servo message
         # 4. Publish the servo message
         
+        # Empty ServoMsg 
+        servo_msg = ServoMsg()
+
+        # Set header to current time 
+        servo_msg.header.stamp = rospy.Time.now()
+
+        # Set throttle 
+        servo_msg.throttle = throttle 
+
+        # Set steering angle 
+        servo_msg.steer = steer 
+
+        # Publish servo message (same a pub.publish but now the pub handle is called control_pub)
+        self.control_pub.publish(servo_msg)
+
         ########################### END OF TODO 4 #################################
 
     def planning_thread(self):
@@ -174,8 +202,10 @@ class PurePursuitController():
             # determine if we need to replan
             # if the current state is not None and a new state is available
             # we need to re-calculate the control command
+
+            
             if self.state_buffer.new_data_available:
-               
+                rospy.logerr("made it")
                 # read the current state and goal from the buffer
                 state_cur = self.state_buffer.readFromRT()
                 goal_cur = self.goal_buffer.readFromRT()
@@ -184,6 +214,7 @@ class PurePursuitController():
                 vel_cur = state_cur.v_long 
 
                 # check if a goal is available
+                rospy.logerr("goalcur{}".format(goal_cur))
                 if goal_cur is not None:
                     # First, transform the goal to the robot frame
                     goal_robot = np.linalg.inv(state_cur.transformation_matrix()).dot(goal_cur)
@@ -195,9 +226,10 @@ class PurePursuitController():
                     dis2goal = np.sqrt(goal_robot[0]**2 + goal_robot[1]**2)
 
                     ########################## TODO: 5. Finish the pure pursuit controlle ###################
-                    # 1. Check if the goal is close enough
+                    # 1. Check if the goal is close enough (check if the robot is close enough to the stop distance)  
+                    #    FYI distance to the goal is above.
                     #
-                    # 2. if that is the case, stop the car by apply a negative acceleration (eg: -1 m/s^2)
+                    # 2. If that is the case, stop the car by apply a negative acceleration (eg: -1 m/s^2)
                     #   and zero steering angle. Then, continue to the next iteration
                     #
                     # 3. If the target is behind the car, apply maximum steering angle 
@@ -205,7 +237,7 @@ class PurePursuitController():
                     # 
                     # 4. Otherwise, 
                     #   - apply a pure pursuit controller for steering by assuming 
-                    #       the reference path a straight line between the car and the goal
+                    #     the reference path is a straight line between the car and the goal
                     #   - Hint: look-ahead distance l_d is min(self.ld_max, dis2goal)
                     #   - set the reference_velocity to the minimum of vel_max and (dis2goal-self.stop_distance)
                     #   Detail Explanation: 
@@ -214,8 +246,37 @@ class PurePursuitController():
                     # 5. clip the steering angle between "-self.steer_max" and "self.steer_max"
                     # 6. apply the simple proportional controller for the acceleration to track the reference_velocity
                     
-                    accel = 0 # TO BE FILLED 
-                    steer = 0 # TO BE FILLED
+                    # Check if the robot is close enough to the goal 
+                    if dis2goal <= self.stop_distance:
+                        # When the robot is close enough to the goal apply negative acceleration and zero streering angle
+                        accel = -1
+                        steer = 0
+                        continue 
+                    
+                    #Check if the target is behind the robot 
+                    if np.abs(alpha) > np.pi/2: 
+                        steer = self.max_steer 
+                        reference_velocity = self.max_vel
+                        continue
+
+                    else:
+                        # Define the look ahead distance 
+                        rospy.logerr("made to steering")
+                        l_d = min(self.ld_max, dis2goal)
+
+                        # Apply pure pursuit controller for steering
+                       
+                        steer = np.arctan(2*self.wheel_base*np.sin(alpha)/l_d)
+                        rospy.logerr("steer{}".format(steer))
+                        # Set the referecnce velocity 
+                        reference_velocity = min(self.max_vel, dis2goal-self.stop_distance)
+                        
+                    # Clip Steering angle 
+                    steer = np.clip(steer,-self.max_steer, self.max_steer)
+
+                    # Apply proportial controller
+                    accel = self.throttle_gain * (reference_velocity - vel_cur)
+                    rospy.logerr("accc{}".format(accel))
                     ########################### END OF TODO 5 ###########################################
                     
                     # publish the control
